@@ -59,6 +59,8 @@ public class RLSI {
 	public void setWordFile(String wordFile) {
 		this.wordFile = wordFile;
 	}
+	
+	
 
 	/**
 	 * @param args
@@ -176,7 +178,7 @@ public class RLSI {
 
 	public void train() {
 
-		int T = 100;
+		int T = 50;
 		for (int t = 0; t < T; t++) {
 
 			System.out.println("train");

@@ -249,7 +249,7 @@ public class LSI {
 		Vector nextMVector = mVector.sub(direction.scale(alpha));
 
 		//ÌÝ¶ÈÏÂ½µ
-		///erro = e.value - nextMVector.multWith(nVector);
+		erro = e.value - nextMVector.multWith(nVector);
 	
 		Vector part11 = nVector.scale(this.lamda);
 		Vector part22 = mVector.scale(erro);
