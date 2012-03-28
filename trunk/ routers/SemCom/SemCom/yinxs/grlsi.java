@@ -9,7 +9,6 @@
 package math_yinxs;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -57,10 +56,10 @@ public class grlsi {
 	public grlsi() {
 		inverted = new ArrayList[M];
 		doc = new ArrayList[N];
-		termTopic = new double[M][K];
-		topicDoc = new double[K][N];
-		MaxFreq = new double[N];
-		MaxNum = new int[M];
+		termTopic = new double[M][K];  // U matrix
+		topicDoc = new double[K][N];  // V matrix
+		MaxFreq = new double[N];  // In a file, which term is then most frequency.
+		MaxNum = new int[M];  // For a term, how many files it will be.
 		for(int i=0; i < N; ++i) {
 			MaxFreq[i] = 0.0;
 		}
