@@ -8,12 +8,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import utils.ArrayOP;
-
-import model.InvertedIndex;
 import model.Term;
-
-import Jama.Matrix;
 
 public class BiasLSI {
 
@@ -215,8 +210,49 @@ public class BiasLSI {
 	}
 
 	public void train() {
+		for (int cnt = 0; cnt < 100; cnt++) {
+			for (int n = 0; n < N; n++) {
+				double[] error = new double[M];
+				double[] Uv = new double[M];
+				for (int m = 0; m < M; m++) {
+					double product = 0.0;
+					for (int k = 0; k < K; k++) {
+						product += this.termTopic[m][k] * this.docTopic[n][k];
+					}
+					Uv[m] = product;
+				}
+				for (Term t : this.docs[n]) {
+					error[t.termId] = t.frequence - Uv[t.termId];
+					Uv[t.termId] = 0.0;
+				}
+				for (int m = 0; m < M; m++) {
+					// error[m] = error[m] - Uv[m];
+				}
+				double[] part1 = new double[K];
+				for (int k = 0; k < K; k++) {
+					double product = 0.0;
+					for (int m = 0; m < M; m++) {
+						product += -this.termTopic[m][k] * error[m];
+					}
+					part1[k] = product;
+				}
+				double[] direction = new double[K];
 
-		
+				lamda3 = 0.01;
+				for (int k = 0; k < K; k++) {
+					direction[k] = part1[k] + lamda2 * this.docTopic[n][k];
+
+				}
+				// update Vn
+				for (int k = 0; k < K; k++) {
+					this.docTopic[n][k] = this.docTopic[n][k] - this.alpha
+							* direction[k];
+				}
+
+			}
+			//update Un
+			
+		}
 
 	}
 
@@ -255,7 +291,6 @@ public class BiasLSI {
 		}
 	}
 
-	
 	/**
 	 * @param args
 	 * @throws Exception
