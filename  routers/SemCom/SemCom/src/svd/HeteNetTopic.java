@@ -10,7 +10,6 @@ import java.util.List;
 
 import utils.ArrayOP;
 
-import model.InvertedIndex;
 import model.Term;
 
 import Jama.Matrix;
@@ -35,9 +34,8 @@ public class HeteNetTopic {
 	private int K = 4;
 	private double lamda1 = 0.1;
 	private double lamda2 = 0.1;
-	private double lamda3 = 0;
-	private double lamda4 = 0;
-	private double alpha = 0.001;
+	private double lamda3 = 0.01;
+	private double alpha = 0.01;
 	private double[][] termTopic = null;
 	private double[][] docTopic = null;
 	private double[][] S = null;
@@ -216,10 +214,10 @@ public class HeteNetTopic {
 
 	public void train() {
 
-		int T = 50;
+		int T = 20;
 		for (int t = 0; t < T; t++) {
 
-			System.out.println("train:" + t);
+			System.out.println("trainxx:" + t);
 			System.out.println("doc erro:" + this.getError());
 			// update U
 			// compute S
@@ -262,13 +260,6 @@ public class HeteNetTopic {
 						this.termTopic[m][k] = Math.max(0,
 								(Math.abs(w_mk) - 0.5 * lamda1))
 								* sign(w_mk) / S[k][k];
-						// if(this.wordTopic[m][k]>0){
-						// this.wordTopic[m][k] = (Math.abs(w_mk) - 0.5 *
-						// lamda1) / S[k][k];
-						// }else{
-						// this.wordTopic[m][k] = (Math.abs(w_mk) + 0.5 *
-						// lamda1) / S[k][k];
-						// }
 
 					}
 					double error = 0.0;
@@ -291,7 +282,7 @@ public class HeteNetTopic {
 			// update V with gradient method
 
 			System.out.println("update V:" + t);
-			// updateV1();
+			//updateV1();
 
 			this.gradientSolveV(t);
 
@@ -383,38 +374,9 @@ public class HeteNetTopic {
 	public void updateV1() {
 
 		// ////////////////update V
-		double[][] II = new double[K][K];
-		for (int i = 0; i < K; i++) {
-			for (int j = 0; j < K; j++) {
-				if (i == j) {
-					II[i][j] = lamda2 + lamda3 + lamda4;
-				}
-			}
-		}
-		Matrix I = new Matrix(II);
+	
 		Matrix U = new Matrix(this.termTopic);
 		Matrix UU = U.transpose().times(U);
-		Matrix temp = UU.plus(I);
-		Matrix Z = temp.inverse();
-
-		// compute author-topic and conf-topic
-		for (int i = 0; i < this.authorNum; i++) {
-			ArrayOP.clear(this.authorTopic[i]);
-			for (Integer docId : this.docOfAuthor[i]) {
-				ArrayOP.addEquals(this.authorTopic[i], this.docTopic[docId]);
-			}
-			ArrayOP.divideEquals(this.authorTopic[i], this.docOfAuthor[i]
-					.size());
-		}
-
-		for (int i = 0; i < this.confNum; i++) {
-			ArrayOP.clear(this.confTopic[i]);
-			for (Integer docId : this.docOfConf[i]) {
-				ArrayOP.addEquals(this.confTopic[i], this.docTopic[docId]);
-			}
-			ArrayOP.divideEquals(this.confTopic[i], this.docOfConf[i].size());
-		}
-
 		double[][] O = new double[K][N];
 
 		for (int k = 0; k < K; k++) {
@@ -430,22 +392,49 @@ public class HeteNetTopic {
 			}
 		}
 
-		// refine O
+		
 		for (int n = 0; n < N; n++) {
-			// compute x0
-			double[] averAuTopic = new double[K];
-			for (Integer a : this.authorofDoc[n]) {
-				ArrayOP.addEquals(averAuTopic, this.authorTopic[a]);
+			
+			// compute x0 and sumOfSim
+			double sumOfSim=0.0;
+			double []adjsTopic=new double[K];
+			List<Integer> adjDoc=new ArrayList<Integer>();
+			for (Integer au : this.authorofDoc[n]) {			
+				for (Integer docId : this.docOfAuthor[au]) {
+					if (docId != n) {
+						adjDoc.add(docId);
+					}
+				}	
 			}
-			ArrayOP.divideEquals(averAuTopic, this.authorofDoc[n].size());
-			double[] x0 = ArrayOP.times(averAuTopic, lamda3);
-			ArrayOP.addEquals(x0, ArrayOP.times(
-					this.confTopic[this.confOfDoc[n]], lamda4));
-			ArrayOP.divideEquals(x0, lamda2 + lamda3 + lamda4);
+			for(Integer adj:adjDoc){
+				double sim=ArrayOP.getSim(this.authorofDoc[n].toArray(), this.authorofDoc[adj].toArray());
+				double []tmp=ArrayOP.minus(this.docTopic[n], this.docTopic[adj]);
+				tmp=ArrayOP.times(tmp, sim);
+				sumOfSim+=sim;
+				ArrayOP.addEquals(adjsTopic, tmp);
+			}
+			double[] x0=ArrayOP.times(adjsTopic, lamda3/(lamda3+lamda3*sumOfSim));
+			
+			
+			double[][] Q = new double[K][K];
+			for (int i = 0; i < K; i++) {
+				for (int j = 0; j < K; j++) {
+					if (i == j) {
+						Q[i][j] = lamda2 + lamda3*sumOfSim ;
+					}
+				}
+			}
+			Matrix I = new Matrix(Q);
+			Matrix temp = UU.plus(I);
+			Matrix Z = temp.inverse();
+		
+	
+		
 			double[] UUx0 = new double[K];
 			for (int k = 0; k < K; k++) {
 				UUx0[k] = ArrayOP.dotProduct(UU.getArray()[k], x0);
 			}
+			// refine O
 			for (int k = 0; k < K; k++) {
 				O[k][n] = O[k][n] - UUx0[k];
 			}
@@ -458,16 +447,7 @@ public class HeteNetTopic {
 			}
 
 		}
-		// for(int n=0;n<N;n++){
-		//		
-		// double []OClo=new double[K];
-		// for(int k=0;k<K;k++){
-		// OClo[k]=O[k][n];
-		// }
-		// for(int k=0;k<K;k++){
-		// this.docTopic[n][k]=dotProduct(Z.getArray()[k],OClo);
-		// }
-		// }
+	
 
 	}
 
@@ -484,22 +464,11 @@ public class HeteNetTopic {
 				for (Integer au : this.authorofDoc[n]) {
 					double[] auTopic = new double[K];
 					for (Integer docId : this.docOfAuthor[au]) {
-						ArrayOP.addEquals(auTopic, this.docTopic[docId]);
+						
 					}
-					// topic of au equals average of all his papers
-					ArrayOP.divideEquals(auTopic, this.docOfAuthor[au].size());
-					ArrayOP.addEquals(avAuTopic, auTopic);
+			
 				}
-				// divide the number of authors of the paper n
-				ArrayOP.divideEquals(avAuTopic, this.authorofDoc[n].size());
-				double[] avConfTopic = new double[K];
-				int confId = this.confOfDoc[n];
-				for (Integer docId : this.docOfConf[confId]) {
-					ArrayOP.addEquals(avConfTopic, this.docTopic[docId]);
-				}
-				ArrayOP
-						.divideEquals(avConfTopic, this.docOfConf[confId]
-								.size());
+				
 
 				// gradient decent
 				double[] error = new double[M];
@@ -530,8 +499,7 @@ public class HeteNetTopic {
 
 				for (int k = 0; k < K; k++) {
 					direction[k] = part1[k] + lamda2 * this.docTopic[n][k]
-							+ lamda3 * (this.docTopic[n][k] - avAuTopic[k])
-							+ lamda4 * (this.docTopic[n][k] - avConfTopic[k]);
+							+ lamda3 * (this.docTopic[n][k] - avAuTopic[k]);
 				}
 				// for (int k = 0; k < K; k++) {
 				// direction[k] = part1[k] + lamda2 * this.docTopic[n][k];
@@ -546,47 +514,35 @@ public class HeteNetTopic {
 		}
 	}
 
+	private double[] getNetRegulazation(int n){
+		double []r=new double[K];
+		List<Integer> adjDoc=new ArrayList<Integer>();
+		for (Integer au : this.authorofDoc[n]) {			
+			for (Integer docId : this.docOfAuthor[au]) {
+				if (docId != n) {
+					adjDoc.add(docId);
+				}
+			}	
+		}
+		for(Integer adj:adjDoc){
+			double w=ArrayOP.getSim(this.authorofDoc[n].toArray(), this.authorofDoc[adj].toArray());
+			double []tmp=ArrayOP.minus(this.docTopic[n], this.docTopic[adj]);
+			tmp=ArrayOP.times(tmp, w);
+			ArrayOP.addEquals(r, tmp);
+		}
+		return r;
+	}
 	public void gradientSolveV(int gT) {
 
-		int trainNum = 5;
+		int trainNum = 10;
 		while (trainNum-- > 0) {
 
 			for (int n = 0; n < N; n++) {
 
 				if (n % 5000 == 0) {
-					System.out.println("grandient num:" + n);
+					//System.out.println("grandient numxx:" + n);
 				}
-
-				// compute author-topic and conf-topic
-				double[] avAuTopic = new double[K];
-				for (Integer au : this.authorofDoc[n]) {
-					double[] auTopic = new double[K];
-					int docSize = 0;
-					for (Integer docId : this.docOfAuthor[au]) {
-						if (docId != n) {
-							docSize++;
-							ArrayOP.addEquals(auTopic, this.docTopic[docId]);
-						}
-
-					}
-					// topic of au equals average of all his papers
-					if (docSize > 0) {
-						ArrayOP.divideEquals(auTopic, docSize);
-					}
-
-					ArrayOP.addEquals(avAuTopic, auTopic);
-				}
-				// divide the number of authors of the paper n
-				ArrayOP.divideEquals(avAuTopic, this.authorofDoc[n].size());
-				double[] avConfTopic = new double[K];
-				int confId = this.confOfDoc[n];
-				for (Integer docId : this.docOfConf[confId]) {
-					ArrayOP.addEquals(avConfTopic, this.docTopic[docId]);
-				}
-				ArrayOP
-						.divideEquals(avConfTopic, this.docOfConf[confId]
-								.size());
-				//
+				
 				double[] error = new double[M];
 				double[] Uv = new double[M];
 				for (int m = 0; m < M; m++) {
@@ -612,17 +568,14 @@ public class HeteNetTopic {
 					part1[k] = product;
 				}
 				double[] direction = new double[K];
+				double[] regTopic = this.getNetRegulazation(n);
 				lamda3 = 0.01;
-				lamda4 = 0.0;
 				for (int k = 0; k < K; k++) {
-					double a = lamda3
-							* (this.docTopic[n][k] * 10000.0 - avAuTopic[k] * 10000.0)
-							/ 10000.0;
-					double b = lamda4 * (this.docTopic[n][k] - avConfTopic[k]);
-					// System.out.println("a:"+a);
-				
-				
-					direction[k] = part1[k] + lamda2 * this.docTopic[n][k];
+					double a = lamda3* (this.docTopic[n][k]  - regTopic[k]);
+					if(n%5000==0){
+						//System.out.println(regTopic[k]);
+					}				
+					direction[k] = part1[k] + lamda2 * this.docTopic[n][k]+a;
 				
 
 				}
@@ -631,15 +584,7 @@ public class HeteNetTopic {
 					this.docTopic[n][k] = this.docTopic[n][k] - this.alpha
 							* direction[k];
 				}
-//				// update Un
-//				double[] part2 = new double[K];
-//				for (int k = 0; k < K; k++) {
-//					double product = 0.0;
-//					for (int n1 = 0; n1 < N; n1++) {
-//						product += -this.termTopic[n1][k] * error[n1];
-//					}
-//					part1[k] = product;
-//				}
+
 			}
 		}
 
