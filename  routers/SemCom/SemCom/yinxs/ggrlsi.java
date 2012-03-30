@@ -9,7 +9,7 @@ import java.util.List;
 import javax.vecmath.*;
 
 public class ggrlsi {
-	// List<MatElement> tData = null;
+	List<MatElement> tData = null;
 	int M = 11771;
 	int N = 28569;
 	int K = 4;
@@ -19,12 +19,12 @@ public class ggrlsi {
 	GVector MaxFreqWordForAFile = null;
 	GVector MaxCntFileForAWord = null;
 	double lamda = 0.1;
-	double alpha = 0.1;
+	double alpha = 0.01;
 	double err = 0.0;
 	private String[] words = new String[12000];
 
 	public ggrlsi() {
-		// this.tData = new ArrayList<MatElement>();
+		this.tData = new ArrayList<MatElement>();
 		this.UVector = new GVector[M];
 		for (int i = 0; i < M; ++i) {
 			this.UVector[i] = new GVector(K);
@@ -50,7 +50,7 @@ public class ggrlsi {
 				int docId = Integer.parseInt(tmpLine.split(",")[0]);
 				int termId = Integer.parseInt(tmpLine.split(",")[1]);
 				double weight = Double.parseDouble(tmpLine.split(",")[2]);
-				// this.tData.add(new MatElement(docId, termId, weight));
+				this.tData.add(new MatElement(docId, termId, weight));
 				this.MaxCntFileForAWord.setElement(termId,
 						(MaxCntFileForAWord.getElement(termId)) + 1);
 				if (this.MaxFreqWordForAFile.getElement(docId) < weight) {
@@ -94,6 +94,19 @@ public class ggrlsi {
 		UTmp.add(VTmp);
 		UTmp.scale(alpha);
 		UVector[iTerm].sub(UTmp);
+		for(int i=0; i < K; ++i) {
+			System.out.print(i+"\t"+UVector[iTerm].getElement(i)+ "\t");
+			if(UVector[iTerm].getElement(i) == Double.NaN) {
+				System.out.println("Here are something in U");
+			}
+		}
+		System.out.println();
+//		try {
+//			Thread.sleep(100);
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 	}
 
 	public void updateV(MatElement mt) {
@@ -111,6 +124,19 @@ public class ggrlsi {
 		VTmp.add(UTmp);
 		VTmp.scale(alpha);
 		VVector[jDoc].sub(VTmp);
+		for(int i=0; i < K; ++i) {
+			System.out.print(i+"\t"+VVector[jDoc].getElement(i)+"\t");
+			if(VVector[jDoc].getElement(i) == Double.NaN) {
+				System.out.println("Here are something in V");
+			}
+		}
+		System.out.println();
+//		try {
+//			Thread.sleep(500);
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 	}
 
 //	public void getError() {
@@ -134,27 +160,42 @@ public class ggrlsi {
 		}
 	}
 
-	public void ggRlsi(String fName) throws NumberFormatException, IOException {
+	public void ggRlsi() throws NumberFormatException, IOException {
 		randomV();
-		while ((this.trainTime--) != 0) {
-			FileReader fr = new FileReader(fName);
-			BufferedReader br = new BufferedReader(fr);
-			while(br.ready()) {
-				String tmpLine = br.readLine();
-				int docId = Integer.parseInt(tmpLine.split(",")[0]);
-				int termId = Integer.parseInt(tmpLine.split(",")[1]);
-				double weight = Double.parseDouble(tmpLine.split(",")[2]);
-				MatElement mt = new MatElement(docId, termId, weight);
-				updateU(mt);
-				updateV(mt);
-			}
-//			System.out.println(this.trainTime);
-//			for (MatElement mt : tData) {
+//		while ((this.trainTime--) != 0) {
+//			FileReader fr = new FileReader(fName);
+//			BufferedReader br = new BufferedReader(fr);
+//			while(br.ready()) {
+//				String tmpLine = br.readLine();
+//				int docId = Integer.parseInt(tmpLine.split(",")[0]);
+//				int termId = Integer.parseInt(tmpLine.split(",")[1]);
+//				double weight = Double.parseDouble(tmpLine.split(",")[2]);
+//				MatElement mt = new MatElement(docId, termId, weight);
 //				updateU(mt);
 //				updateV(mt);
-//				//getError();
-//				//System.out.println(this.trainTime + "\tError:\t" + this.err);
 //			}
+		int i = 0;
+		while((this.trainTime--) != 0) {
+			System.out.println(this.trainTime);
+			for (MatElement mt : tData) {
+				if(i == 101119) {
+					System.out.println("here.");
+				}
+				if((i++)%100 == 0) {
+					System.out.println(mt);
+//					try {
+//						Thread.sleep(100);
+//					} catch (InterruptedException e) {
+//						// TODO Auto-generated catch block
+//						e.printStackTrace();
+//					}
+				}
+				System.out.println(i);
+				updateU(mt);
+				updateV(mt);
+				//getError();
+				//System.out.println(this.trainTime + "\tError:\t" + this.err);
+			}
 		}
 	}
 
@@ -196,6 +237,9 @@ public class ggrlsi {
 			double[] array = new double[this.VVector.length];
 			for (int i = 0; i < this.VVector.length; i++) {
 				array[i] = this.VVector[i].getElement(a);
+//				if(this.VVector[i].getElement(a) == Double.NaN) {
+//					System.out.println("fuck!");
+//				}
 			}
 			double minValue = this.getMaxK(array, 20)[0];
 			String[] keywords = new String[20];
@@ -204,6 +248,9 @@ public class ggrlsi {
 				if (this.VVector[i].getElement(a) > minValue) {
 					keywords[index] = this.words[i];
 					index++;
+					if(index == 19) {
+						break;
+					}
 				}
 			}
 			System.out.println("topic" + a + ":");
@@ -216,7 +263,7 @@ public class ggrlsi {
 	public static void main(String[] args) throws NumberFormatException, IOException {
 		ggrlsi test = new ggrlsi();
 		test.load("mdt.txt","term.txt");
-		test.ggRlsi("mdt.txt");
+		test.ggRlsi();
 		test.outPutTopics();
 	}
 }
