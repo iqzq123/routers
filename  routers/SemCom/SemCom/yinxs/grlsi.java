@@ -45,7 +45,7 @@ public class grlsi {
 	
 	public double lamda1 = 0.1;
 	public double lamda2 = 0.1;
-	public double alpha = 0.05;
+	public double alpha = 0.1;
 	
 	public List<Doc>[] inverted = null;
 	public List<Term>[] doc = null;
@@ -198,15 +198,12 @@ public class grlsi {
 				gradientU(termId,docId,weight);
 				gradientV(termId,docId,weight);
 				
-				if((ccnt++)%50 == 0) {
+				if((ccnt++)%1000 == 0) {
 					double err = getError();
-					System.out.println("\tError:\t" + err);
-					Thread.sleep(3000);
+					System.out.println(ccnt+"\tError:\t" + err);
+					Thread.sleep(1500);
 				}
-				
 			}
-			
-			
 		}
 		br.close();
 		fr.close();		
@@ -253,4 +250,3 @@ public class grlsi {
 		test.gRlsi("mdt.txt");
 	}
 }
-

@@ -1,7 +1,6 @@
 package math_yinxs;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,7 +12,7 @@ public class ggrlsi {
 	int M = 11771;
 	int N = 28569;
 	int K = 4;
-	int trainTime = 1;
+	int trainTime = 100;
 	GVector UVector[] = null;
 	GVector VVector[] = null;
 	GVector MaxFreqWordForAFile = null;
@@ -94,13 +93,13 @@ public class ggrlsi {
 		UTmp.add(VTmp);
 		UTmp.scale(alpha);
 		UVector[iTerm].sub(UTmp);
-		for(int i=0; i < K; ++i) {
-			System.out.print(i+"\t"+UVector[iTerm].getElement(i)+ "\t");
-			if(UVector[iTerm].getElement(i) == Double.NaN) {
-				System.out.println("Here are something in U");
-			}
-		}
-		System.out.println();
+//		for(int i=0; i < K; ++i) {
+//			System.out.print(i+"\t"+UVector[iTerm].getElement(i)+ "\t");
+//			if(UVector[iTerm].getElement(i) == Double.NaN) {
+//				System.out.println("Here are something in U");
+//			}
+//		}
+//		System.out.println();
 //		try {
 //			Thread.sleep(100);
 //		} catch (InterruptedException e) {
@@ -124,13 +123,13 @@ public class ggrlsi {
 		VTmp.add(UTmp);
 		VTmp.scale(alpha);
 		VVector[jDoc].sub(VTmp);
-		for(int i=0; i < K; ++i) {
-			System.out.print(i+"\t"+VVector[jDoc].getElement(i)+"\t");
-			if(VVector[jDoc].getElement(i) == Double.NaN) {
-				System.out.println("Here are something in V");
-			}
-		}
-		System.out.println();
+//		for(int i=0; i < K; ++i) {
+//			System.out.print(i+"\t"+VVector[jDoc].getElement(i)+"\t");
+//			if(VVector[jDoc].getElement(i) == Double.NaN) {
+//				System.out.println("Here are something in V");
+//			}
+//		}
+//		System.out.println();
 //		try {
 //			Thread.sleep(500);
 //		} catch (InterruptedException e) {
@@ -178,10 +177,10 @@ public class ggrlsi {
 		while((this.trainTime--) != 0) {
 			System.out.println(this.trainTime);
 			for (MatElement mt : tData) {
-				if(i == 101119) {
-					System.out.println("here.");
-				}
-				if((i++)%100 == 0) {
+//				if(i == 101119) {
+//					System.out.println("here.");
+//				}
+				if((i++)%10000 == 0) {
 					System.out.println(mt);
 //					try {
 //						Thread.sleep(100);
@@ -267,4 +266,3 @@ public class ggrlsi {
 		test.outPutTopics();
 	}
 }
-
