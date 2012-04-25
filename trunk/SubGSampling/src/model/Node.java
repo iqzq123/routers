@@ -26,4 +26,7 @@ public class Node {
 	public String getData() {
 		return data;
 	}
+	public boolean isNeighbor(String dot) {
+		return this.adjList.contains(dot);
+	}
 }

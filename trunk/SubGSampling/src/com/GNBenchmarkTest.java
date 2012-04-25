@@ -140,16 +140,24 @@ public class GNBenchmarkTest
 			CommunityGenerator generator 
 			= new GNCommunityGraphGenerator(communityNumber, communityNode, avgDegree, inDegreeRate);
 			
+			/* 这里生成了标准社团 */
 			Graph graph = generator.generate();
 			Collection standardCommunities = generator.getCommunities();
 			
 
-					
-			TopicCom c = new TopicCom();
+			/* 这里是自己生成的社团 */
+//			TopicCom c = new TopicCom();
+//			c.read(graph);
+//			c.run(sampleNum,communityNumber);
+//			
+//			Collection topicCommunities = c.getCommunities(graph);
+			TopicCom_nmf c = new TopicCom_nmf();
 			c.read(graph);
-			c.run(sampleNum,communityNumber);
-			
+			c.run(sampleNum, communityNumber);
 			Collection topicCommunities = c.getCommunities(graph);
+			
+			/* 最后到这里即可 */
+			
 			PartitionSimilarity similarity1 = new JaccardIndex();
 			PartitionSimilarity similarity2 = new NormalizedMutualInformation();
 			PartitionSimilarity dongenMetric = new DongenMetric();

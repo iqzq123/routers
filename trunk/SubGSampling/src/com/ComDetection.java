@@ -181,6 +181,7 @@ public class ComDetection {
 				wordset.add(documents[i][j]);
 			}
 		}
+		System.out.println(wordset);
 
 		System.out.println("Latent Dirichlet Allocation using Gibbs Sampling.");
 
