@@ -77,11 +77,13 @@ public class SubGGenerator {
 		// ///////////////////////////////////
 
 		bfs(set);
-
+		
+		///////
 		int[][] doc = new int[set.size()][];
 		int dCnt = 0;
 		for (Iterator it = set.iterator(); it.hasNext();) {
 			String id = (String) it.next();
+			/* 34 是干什么的？ */
 			if(id.equals("34")){
 				int a=0;
 			}
@@ -98,8 +100,49 @@ public class SubGGenerator {
 		System.out.println("总数:" + this.graph.getNodeTable().size());
 		System.out.println(" sampleNum" + smapleNum);
 		System.out.println(set.size());
+		System.out.println("选点情况：");
+		System.out.println(set);
+		System.out.println("伪文档情况：");
+		for(int i=0; i < doc.length; ++i) {
+			for(int j=0; j < doc[i].length; ++j) {
+				System.out.print(doc[i][j]+"\t");
+			}
+			System.out.println();
+		}
+		System.out.println(doc);
+		
+		System.out.println("=================================================");
+		
+		int[][] weight = this.getWeight(doc);
+		
+		System.out.println("doc-term-weight list:");
+		
+		for(int i=0; i < doc.length; ++i) {
+			for(int j=0; j < doc[i].length; ++j) {
+				System.out.println(i+","+doc[i][j]+","+weight[i][j]);
+			}
+		}
+		
 		return doc;
 
+	}
+	
+	public int[][] getWeight(int[][] doc) {
+		int weight[][] = new int[doc.length][];
+		for(int i=0; i < doc.length; ++i) {
+			weight[i] = new int[doc[i].length];
+			for(int j=0; j < doc[i].length; ++j) {
+				weight[i][j] = 0;
+				for(int k=0; k < doc[i].length; ++k) {
+					if(this.graph.getNodeTable().get(doc[i][j]+"").isNeighbor(doc[i][k]+"")) {
+						weight[i][j]++;
+					}
+				}
+				System.out.print(weight[i][j]+"\t");
+			}
+			System.out.println();
+		}
+		return weight;
 	}
 
 	public int[][] getSubGDoc() throws IOException {
@@ -376,6 +419,6 @@ public class SubGGenerator {
 		g.readGraphFile("c:/graph1.txt");
 		s.setGraph(g);
 		s.setSmapleNum((int) (s.graph.getNodeTable().size() * 0.3));
-
+		
 	}
 }
