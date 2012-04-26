@@ -97,7 +97,7 @@ public class TopicCom_nmf {
 		this.V = this.graph.getNodeTable().size();
 		this.K = topicNum;
 		
-		nmf2 test = new nmf2(K,M,V,1);
+		nmf2 test = new nmf2(K,M,V,100);
 		test.load(documents, weight);
 		test.train();
 		
