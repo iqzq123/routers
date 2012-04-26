@@ -76,6 +76,9 @@ public class nmf2 {
 		for(int i=0; i < V.getNumRow(); ++i) {
 			for(int j=0; j < V.getNumCol(); ++j) {
 				V.setElement(i, j, Math.random()*1);
+				if(V.getElement(i, j) == 0.0) {
+					System.out.println("Here");
+				}
 			}
 		}
 	}
@@ -89,6 +92,12 @@ public class nmf2 {
 			}
 			sum.setElement(i, tmp);
 			for(int j=0; j < V.getNumCol(); ++j) {
+				if(sum.getElement(i) == 0.0) {
+					sum.setElement(i, 0.0000000001/sum.getSize());
+				}
+				if(V.getElement(i, j) == 0.0) {
+					V.setElement(i, j, 0.0000000001/(V.getNumCol()*V.getNumRow()));
+				}
 				V.setElement(i, j, 1.0*V.getElement(i, j)/sum.getElement(i));
 			}
 		}
@@ -100,6 +109,12 @@ public class nmf2 {
 		GMatrix retval = new GMatrix(l.getNumRow(),l.getNumCol());
 		for(int i=0; i < l.getNumRow(); ++i) {
 			for(int j=0; j < l.getNumCol(); ++j) {
+				if(r.getElement(i, j) == 0.0) {
+					r.setElement(i, j, 0.0000000001/(r.getNumCol()*r.getNumRow()));
+				}
+				if(l.getElement(i, j) == 0.0) {
+					r.setElement(i, j, 0.0000000001/(l.getNumCol()*l.getNumRow()));
+				}
 				retval.setElement(i, j, 1.0*l.getElement(i, j)/r.getElement(i, j));
 			}
 		}
@@ -175,9 +190,9 @@ public class nmf2 {
 			System.out.println("´íÎóÂÊ£º"+this.getErr(X, XX));
 		}
 		
-		System.out.print(U);
-		System.out.println();
-		System.out.print(V);
+//		System.out.print(U);
+//		System.out.println();
+//		System.out.print(V);
 	}
 	
 	public static void main(String args) throws IOException {

@@ -52,6 +52,8 @@ public class GMatrix implements java.io.Serializable, Cloneable {
     double[][] values;
 
     private static final double EPS = 1.0E-10;
+    
+    private boolean isLog = false;
 
     /**
      * Constructs an nRow by NCol identity matrix. 
@@ -3065,6 +3067,64 @@ public class GMatrix implements java.io.Serializable, Cloneable {
 	}
 
 	return m1;
+    }
+    /**
+     * 将所有的数据转换成 log 形式，避免乘除法运算浮动过大
+     * by yinxs
+     */
+    public void trans2log() {
+    	assert(this.isLog == false);
+    	for(int i=0; i < this.values.length; ++i) {
+    		for(int j=0; j < this.values[i].length; ++j) {
+    			this.values[i][j] = Math.log(this.values[i][j]);
+    		}
+    	}
+    	this.isLog = true;
+    }
+    
+    /**
+     * 将所有转换成 log 形式的数据转换回来。
+     * 注意，一定要在上面那个用完才能用下面这个
+     * 转化数据之后，只能使用带 _log 的函数做运算，否则后果自负
+     * by yinxs
+     */
+    public void transback() {
+    	assert(this.isLog == true);
+    	for(int i=0; i < this.values.length; ++i) {
+    		for(int j=0; j < this.values[i].length; ++j) {
+    			this.values[i][j] = Math.exp(this.values[i][j]);
+    		}
+    	}
+    	this.isLog = false;
+    }
+    
+    /**
+     * 矩阵乘法运算
+     * 此函数为 log 运算函数，确保传入的矩阵均为log形式
+     * @param m1 the first matrix
+     * @param m2 the second matrix
+     */
+    public final void mul_log(GMatrix m1, GMatrix m2)
+    {
+    	assert(this.isLog == true);
+	int i, j, k;
+
+	if (m1.nCol != m2.nRow || nRow != m1.nRow || nCol != m2.nCol)
+	    throw new MismatchedSizeException
+		(VecMathI18N.getString("GMatrix1"));
+
+	double[][] tmp = new double[nRow][nCol];
+
+	for (i = 0; i < m1.nRow; i++) {
+	    for (j = 0; j < m2.nCol; j++) {
+		tmp[i][j] = 0.0;
+		for (k = 0; k < m1.nCol; k++) {
+		    tmp[i][j] += m1.values[i][k]*m2.values[k][j];	
+		}
+	    }
+	}
+       
+	values = tmp;
     }
 
 }
