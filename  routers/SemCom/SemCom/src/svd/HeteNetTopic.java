@@ -34,8 +34,8 @@ public class HeteNetTopic {
 	private int K = 4;
 	private double lamda1 = 0.1;
 	private double lamda2 = 0.1;
-	private double lamda3 = 0.01;
-	private double alpha = 0.01;
+	private double lamda3 = 0.05;
+	private double alpha = 0.02;
 	private double[][] termTopic = null;
 	private double[][] docTopic = null;
 	private double[][] S = null;
@@ -51,7 +51,7 @@ public class HeteNetTopic {
 
 	private double[][] authorTopic = null;
 	private double[][] confTopic = null;
-
+ 
 	// save doc-author with two list array
 	private List<Integer>[] docOfAuthor = null;
 	private List<Integer>[] authorofDoc = null;
@@ -282,7 +282,7 @@ public class HeteNetTopic {
 			// update V with gradient method
 
 			System.out.println("update V:" + t);
-			//updateV1();
+			//updateV();
 
 			this.gradientSolveV(t);
 
@@ -291,6 +291,14 @@ public class HeteNetTopic {
 			this.outputTopic(i);
 		}
 
+		Evaluation e=new Evaluation();
+		try {
+			e.loadTestData("c:/data");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		e.evaluate(this.docTopic);
 	}
 
 	public void outputTopic(int k) {

@@ -8,6 +8,8 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import utils.ArrayOP;
+
 import model.Term;
 
 public class BiasLSI {
@@ -31,13 +33,13 @@ public class BiasLSI {
 	private double lamda1 = 0.1;
 	private double lamda2 = 0.1;
 	private double lamda3 = 0;
-	private double lamda4 = 0;
-	private double alpha = 0.001;
+
+	private double alpha = 0.01;
 	private double[][] termTopic = null;
 	private double[][] docTopic = null;
-	private double[][] S = null;
-	private double[][] R = null;
-	private double maxError = 0.01;
+
+
+
 	private List<InvertedIndex>[] indexs = null;
 	private List<Term>[] docs = null;
 	private String[] terms = new String[12000];
@@ -46,8 +48,7 @@ public class BiasLSI {
 	private int authorNum = 28703;
 	private int confNum = 20;
 
-	private double[][] authorTopic = null;
-	private double[][] confTopic = null;
+
 
 	// save doc-author with two list array
 	private List<Integer>[] docOfAuthor = null;
@@ -70,8 +71,8 @@ public class BiasLSI {
 
 		termTopic = new double[M][K];
 		docTopic = new double[N][K];
-		R = new double[M][K];
-		S = new double[K][K];
+	
+
 		for (int i = 0; i < M; i++) {
 			for (int j = 0; j < K; j++) {
 				termTopic[i][j] = Math.random() * 1;
@@ -107,8 +108,7 @@ public class BiasLSI {
 			this.docOfConf[i] = new ArrayList<Integer>();
 		}
 
-		this.authorTopic = new double[this.authorNum][K];
-		this.confTopic = new double[this.confNum][K];
+	
 		BufferedReader reader1 = null;
 		FileInputStream file1 = new FileInputStream(new File(inPath
 				+ "/mdt.txt"));
@@ -209,52 +209,80 @@ public class BiasLSI {
 		return error / cnt;
 	}
 
-	public void train() {
-		for (int cnt = 0; cnt < 100; cnt++) {
-			for (int n = 0; n < N; n++) {
-				double[] error = new double[M];
-				double[] Uv = new double[M];
-				for (int m = 0; m < M; m++) {
-					double product = 0.0;
-					for (int k = 0; k < K; k++) {
-						product += this.termTopic[m][k] * this.docTopic[n][k];
-					}
-					Uv[m] = product;
-				}
-				for (Term t : this.docs[n]) {
-					error[t.termId] = t.frequence - Uv[t.termId];
-					Uv[t.termId] = 0.0;
-				}
-				for (int m = 0; m < M; m++) {
-					// error[m] = error[m] - Uv[m];
-				}
-				double[] part1 = new double[K];
-				for (int k = 0; k < K; k++) {
-					double product = 0.0;
-					for (int m = 0; m < M; m++) {
-						product += -this.termTopic[m][k] * error[m];
-					}
-					part1[k] = product;
-				}
-				double[] direction = new double[K];
-
-				lamda3 = 0.01;
-				for (int k = 0; k < K; k++) {
-					direction[k] = part1[k] + lamda2 * this.docTopic[n][k];
-
-				}
-				// update Vn
-				for (int k = 0; k < K; k++) {
-					this.docTopic[n][k] = this.docTopic[n][k] - this.alpha
-							* direction[k];
-				}
-
+	public double getTfIdf(int doc, int term){
+		
+		int docNum=this.indexs[term].size();
+		int total=0;
+		double tf=0;
+		for(Term t:this.docs[doc]){
+			total+=t.frequence;
+			if(t.termId==term){
+				tf=t.frequence;
 			}
-			//update Un
+		}
+		tf=tf/total;
+		double tfIdf=tf*Math.log(this.N/docNum);
+		return tfIdf;
+		
+	}
+	public void train() {
+		
+		double aver=0.0;
+		int count=0;
+		for(int doc=0;doc<this.N;doc++){
+			for(Term t:this.docs[doc]){
+				aver+=this.getTfIdf(doc, t.termId);
+				count++;
+			}		
+		}
+		aver=aver/count;
+		System.out.println(count+":"+aver);
+		for (int cnt = 0; cnt < 50; cnt++) {
+			for(int doc=0;doc<this.N;doc++){
+				double[] regPart=ArrayOP.minus(this.docTopic[doc], this.getNetRegulazation(doc));
+				regPart=ArrayOP.times(regPart, this.lamda3);
+				for(Term t:this.docs[doc]){
+					double w=this.getTfIdf(doc, t.termId)/aver;
+					
+					double value=ArrayOP.dotProduct(this.docTopic[doc], this.termTopic[t.termId]);
+					double error=t.frequence-value;
+					double []tmp=ArrayOP.times(this.termTopic[t.termId], -error);
+					double []direction=ArrayOP.add(tmp, ArrayOP.times(this.docTopic[doc], this.lamda1));				
+					ArrayOP.addEquals(direction, regPart);
+					this.docTopic[doc]=ArrayOP.minus(this.docTopic[doc], ArrayOP.times(direction, alpha));			
+					value=ArrayOP.dotProduct(this.docTopic[doc], this.termTopic[t.termId]);
+					error=t.frequence-value;
+					double []tmp2=ArrayOP.times(this.docTopic[doc], -error);
+					double []direction2=ArrayOP.add(tmp2, ArrayOP.times(this.termTopic[t.termId], this.lamda2/w));				
+					this.termTopic[t.termId]=ArrayOP.minus(this.termTopic[t.termId], ArrayOP.times(direction2, alpha));
+				}
+			}
+			System.out.println(cnt+":"+this.getError());
 			
 		}
-
+		for(int k=0;k<K;k++){
+			this.outputTopic(k);
+		}
 	}
+	private double[] getNetRegulazation(int n){
+		double []r=new double[K];
+		List<Integer> adjDoc=new ArrayList<Integer>();
+		for (Integer au : this.authorofDoc[n]) {			
+			for (Integer docId : this.docOfAuthor[au]) {
+				if (docId != n) {
+					adjDoc.add(docId);
+				}
+			}	
+		}
+		for(Integer adj:adjDoc){
+			double w=ArrayOP.getSim(this.authorofDoc[n].toArray(), this.authorofDoc[adj].toArray());
+			double []tmp=ArrayOP.minus(this.docTopic[n], this.docTopic[adj]);
+			tmp=ArrayOP.times(tmp, w);
+			ArrayOP.addEquals(r, tmp);
+		}
+		return r;
+	}
+
 
 	public void outputTopic(int k) {
 		double[] array = new double[20];
@@ -298,9 +326,6 @@ public class BiasLSI {
 	public static void main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
 		BiasLSI r = new BiasLSI();
-		// r.intial(11771, 28569, 4);
-		r.setWordFile("c:/data/term.txt");
-		// r.readData("c:/mdt.txt");
 		r.readData1("c:/data/");
 		r.train();
 
