@@ -19,6 +19,8 @@ public class SubGGenerator {
 	private MyGraph graph = new MyGraph();
 	private int smapleNum = 10;
 	private int minDegree = 5;
+	private int breadth=3;
+	private double conRatio=0.25;
 
 	public MyGraph getGraph() {
 		return graph;
@@ -64,7 +66,7 @@ public class SubGGenerator {
 				set.add(node.getId());
 				adjSet.add(node.getId());
 				System.out.println("sample:" + node.getId());
-				if (set.size() > this.smapleNum * 0.4) {
+				if (set.size() > this.smapleNum * this.conRatio) {
 					System.out.println("break");
 					break;
 				}
@@ -400,13 +402,16 @@ public class SubGGenerator {
 			q.offer(it.next());
 		}
 		HashSet markSet = new HashSet();
+		
 		while (sSet.size() < this.smapleNum) {
 			String id = q.poll();
 			sSet.add(id);
 			markSet.add(id);
+			int b=0;
 			for (String adj : this.graph.getAdjList(id)) {
-				if (!markSet.contains(adj)) {
+				if (!markSet.contains(adj)&&b<this.breadth) {
 					q.offer(adj);
+					b++;
 				}
 			}
 		}

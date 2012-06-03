@@ -17,7 +17,7 @@ import model.MyGraph;
 
 public class ComDetection {
 
-	private String inFile = "c:/graph1.txt";
+	private String inFile = "c:/karate.txt";
 	private String outFile = "c:/cluster.txt";
 	private MyGraph graph = new MyGraph();
 	private double modulity = 0.0;
@@ -161,7 +161,7 @@ public class ComDetection {
 
 	public boolean run() throws IOException {
 
-		this.inFile = "c:/dolphins-edges.txt";
+		this.inFile = "c:/karate.txt";
 		this.graph.readGraphFile(this.inFile);
 		SubGGenerator g = new SubGGenerator();
 		g.setGraph(this.graph);
@@ -169,7 +169,7 @@ public class ComDetection {
 		int[][] documents = g.getSubGDoc3();
 
 		M = documents.length;
-		this.V = 62;
+		this.V = this.graph.getNodeTable().size()+1;
 		this.K = 2;
 		int maxWId = -1;
 		HashSet wordset = new HashSet();
