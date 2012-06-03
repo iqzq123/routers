@@ -2,7 +2,16 @@ package utils;
 
 public class ArrayOP {
 	
-	
+	static public  int getMaxId(double []array){
+		int maxId = 0;
+		double max=Double.MIN_VALUE;
+		for(int i=0;i<array.length;i++){
+			if(array[i]>max){
+				maxId=i;
+			}
+		}
+		return maxId;
+	}
 	
 	static public double getSim(Object[]objects,Object[]objects2){
 		double comNum=0.0;
@@ -29,6 +38,14 @@ public class ArrayOP {
 			array1[i]+=array2[i];
 		}
 		
+	}
+	
+	static public double [] add(double[] array1,double[] array2){
+		double []ret=new double[array1.length];
+		for(int i=0;i<array1.length;i++){
+			ret[i]=array1[i]+array2[i];
+		}
+		return ret;
 	}
 //	static public double[] mult(double[] array1, double[] array2){
 //		
