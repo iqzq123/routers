@@ -15,7 +15,7 @@ import org.tseg.algorithm.model.community.GNCommunityGraphGenerator;
 import org.tseg.graph.Graph;
 
 
-public class GNBenchmarkTest 
+public class NMFTest 
 {
 
 
@@ -164,7 +164,7 @@ public class GNBenchmarkTest
 		{
 			double out = i * 0.5;
 			//GNBenchmarkTest.getCommunities(writer, out, 1);
-			GNBenchmarkTest.testSample(writer, out, 3);
+			NMFTest.testSample(writer, out, 3);
 		}
 		writer.close();
 	}

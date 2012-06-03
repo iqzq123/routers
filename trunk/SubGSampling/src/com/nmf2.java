@@ -161,6 +161,8 @@ public class nmf2 {
 			VV.mulTransposeLeft(V, V);
 			UVV.mul(U,VV);
 			GMatrix tmp1 = this.DotDiv(XV, UVV);
+			
+//			System.out.println("for U"+tmp1+"\n");
 			U = this.DotMul(U, tmp1);
 //			UV.mul(U, V);
 //			XX = this.DotDiv(X, UV);
@@ -176,6 +178,9 @@ public class nmf2 {
 			UU.mulTransposeLeft(U, U);
 			VUU.mul(V,UU);
 			GMatrix tmp2 = this.DotDiv(XU, VUU);
+		    GVector v1 = new GVector(tmp2.getNumCol());
+		    tmp2.getColumn(0, v1);
+			System.out.println("for V"+v1+"\n");
 			V = this.DotMul(V, tmp2);
 //			UV.mul(U, V);
 //			XX = this.DotDiv(X, UV);
