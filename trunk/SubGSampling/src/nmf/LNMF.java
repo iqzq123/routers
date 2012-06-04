@@ -27,8 +27,8 @@ public class LNMF {
 	public LNMF() {
 		this.K = 2;
 		this.iteratenum = 100;
-		this.M = 30;
-		this.N = 62;
+		this.M = 28701;
+		this.N = 28701;
 		X = new LGMatrix(M,N); /* 该处初始化决定数据起初均为零 */
 		U = new LGMatrix(M,K);
 		V = new LGMatrix(N,K);
@@ -53,6 +53,7 @@ public class LNMF {
 	}
 	
 	public void load(String fName) throws IOException {
+		int size=0;
 		FileReader fr = new FileReader(fName);
 		BufferedReader br = new BufferedReader(fr);
 		while(br.ready()) {
@@ -63,7 +64,11 @@ public class LNMF {
 			assert((i>=0)&&(i<=M));
 			assert((j>=0)&&(j<=N));
 			X.setElement(i, j, w);
+			if(size++ % 1000 == 0) {
+				System.out.println(size+"\tload data 1000");
+			}
 		}
+		System.out.println("Load end.");
 		br.close();
 		fr.close();
 	}
