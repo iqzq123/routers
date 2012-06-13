@@ -52,6 +52,17 @@ public class FGMatrix {
 		return (nCol);
 	}
 
+	/**
+	 * 返回当前矩阵的大小 调试使用
+	 */
+	public int getSize() {
+		int retval = 0;
+		for(ArrayData s: this.values) {
+			retval += s.val.size();
+		}
+		return retval;
+	}
+	
 	public final double getElement(int row, int column) {
 		assert ((row < nRow) && (column < nCol));
 		if (this.values[row].val.containsKey(column)) {
