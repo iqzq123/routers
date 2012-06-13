@@ -1,6 +1,6 @@
 package nmf;
 /**
- * 大数据的NMF版本
+ * 大数据的快速 NMF版本
  * by yinxs
  */
 import java.io.BufferedReader;
@@ -11,37 +11,39 @@ import java.io.IOException;
 
 import javax.vecmath.*;
 
-public class LNMF {
-	private LGMatrix U = null;
-	private LGMatrix V = null;
-	private LGMatrix X = null;
+public class FNMF {
+	private FGMatrix U = null;
+	private FGMatrix V = null;
+	private FGMatrix X = null;
 	private int M;
 	private int N;
 	private int K;
 	private int iteratenum;
 	
-	public LGMatrix getV() {
+	public FGMatrix getV() {
 		return V;
 	}
 	
-	public LNMF() {
+	public FNMF() {
 		this.K = 2;
 		this.iteratenum = 100;
-		this.M = 30;
-		this.N = 62;
-		X = new LGMatrix(M,N); /* 该处初始化决定数据起初均为零 */
-		U = new LGMatrix(M,K);
-		V = new LGMatrix(N,K);
+		this.M = 28701;
+		this.N = 28701;
+//		this.M = 30;
+//		this.N = 62;
+		X = new FGMatrix(M,N); /* 该处初始化决定数据起初均为零 */
+		U = new FGMatrix(M,K);
+		V = new FGMatrix(N,K);
 	}
 	
-	public LNMF(int k, int m, int n, int it) {
+	public FNMF(int k, int m, int n, int it) {
 		this.K = k;
 		this.iteratenum = it;
 		this.M = m;
 		this.N = n;
-		X = new LGMatrix(M,N); /* 该处初始化决定数据起初均为零 */
-		U = new LGMatrix(M,K);
-		V = new LGMatrix(N,K);
+		X = new FGMatrix(M,N); /* 该处初始化决定数据起初均为零 */
+		U = new FGMatrix(M,K);
+		V = new FGMatrix(N,K);
 	}
 	
 	public void load(int[][] d, int[][] w) {
@@ -82,9 +84,9 @@ public class LNMF {
 		for(int i=0; i < V.getNumRow(); ++i) {
 			for(int j=0; j < V.getNumCol(); ++j) {
 				V.setElement(i, j, Math.random()*1);
-				if(V.getElement(i, j) == 0.0) {
-					System.out.println("Here");
-				}
+//				if(V.getElement(i, j) == 0.0) {
+//					System.out.println("Here");
+//				}
 			}
 		}
 	}
@@ -93,46 +95,21 @@ public class LNMF {
 	 * 对于矩阵 V 实施归一化
 	 */
 	private void normCol() {
-		GVector sum = new GVector(V.getNumRow());
 		for(int i=0; i < V.getNumRow(); ++i) {
 			double tmp = 0.0;
 			for(int j=0; j < V.getNumCol(); ++j) {
 				tmp += V.getElement(i, j);
 			}
-			sum.setElement(i, tmp);
 			for(int j=0; j < V.getNumCol(); ++j) {
-				if(sum.getElement(i) == 0.0) {
-					sum.setElement(i, 0.0000000001/sum.getSize());
+				/* 如果加和之后都很小，那么可以看做每一个元素都很小，那就还保持不变吧 */
+				if(tmp < FGMatrix.EPS) {
+					continue;
 				}
-				if(V.getElement(i, j) == 0.0) {
-					V.setElement(i, j, 0.0000000001/(V.getNumCol()*V.getNumRow()));
-				}
-				V.setElement(i, j, 1.0*V.getElement(i, j)/sum.getElement(i));
+				V.setElement(i, j, 1.0*V.getElement(i, j)/tmp);
 			}
 		}
 	}
 	
-	/**
-	 * 两矩阵点乘，并返回结果矩阵
-	 * 
-	 * @param l
-	 * @param r
-	 * @return
-	 */
-	public LGMatrix DotMul(LGMatrix l, LGMatrix r) {
-		assert (l.getNumRow() == r.getNumRow());
-		assert (l.getNumCol() == r.getNumCol());
-		LGMatrix retval = new LGMatrix(l.getNumRow(), l.getNumCol());
-		for (int i = 0; i < l.getNumRow(); ++i) {
-			for (int j = 0; j < l.getNumCol(); ++j) {
-				retval
-						.setElement(i, j, l.getElement(i, j)
-								* r.getElement(i, j));
-			}
-		}
-		return retval;
-	}
-
 	/**
 	 * 两矩阵点除，并返回结果矩阵
 	 * 
@@ -140,21 +117,13 @@ public class LNMF {
 	 * @param r
 	 * @return
 	 */
-	public LGMatrix DotDiv(LGMatrix l, LGMatrix r) {
+	public FGMatrix DotDiv(FGMatrix l, FGMatrix r) {
 		assert (l.getNumRow() == r.getNumRow());
 		assert (l.getNumCol() == r.getNumCol());
-		LGMatrix retval = new LGMatrix(l.getNumRow(), l.getNumCol());
 		double tmp = 0.0;
+		FGMatrix retval = new FGMatrix(l.getNumRow(), l.getNumCol());
 		for (int i = 0; i < l.getNumRow(); ++i) {
 			for (int j = 0; j < l.getNumCol(); ++j) {
-				// if (r.getElement(i, j) == 0.0) {
-				// r.setElement(i, j, 0.0000000001 / (r.getNumCol() * r
-				// .getNumRow()));
-				// }
-				// if (l.getElement(i, j) == 0.0) {
-				// r.setElement(i, j, 0.0000000001 / (l.getNumCol() * l
-				// .getNumRow()));
-				// }
 				if (l.getElement(i, j) == 0.0) {
 					continue;
 				} else {
@@ -167,38 +136,29 @@ public class LNMF {
 		}
 		return retval;
 	}
-
-//	private LGMatrix DotDiv(LGMatrix l, LGMatrix r) {
-//		assert(l.getNumRow() == r.getNumRow());
-//		assert(l.getNumCol() == r.getNumCol());
-//		LGMatrix retval = new LGMatrix(l.getNumRow(),l.getNumCol());
-//		for(int i=0; i < l.getNumRow(); ++i) {
-//			for(int j=0; j < l.getNumCol(); ++j) {
-//				if(r.getElement(i, j) == 0.0) {
-//					r.setElement(i, j, 0.0000000001/(r.getNumCol()*r.getNumRow()));
-//				}
-//				if(l.getElement(i, j) == 0.0) {
-//					r.setElement(i, j, 0.0000000001/(l.getNumCol()*l.getNumRow()));
-//				}
-//				retval.setElement(i, j, 1.0*l.getElement(i, j)/r.getElement(i, j));
-//			}
-//		}
-//		return retval;
-//	}
-//	
-//	private LGMatrix DotMul(LGMatrix l, LGMatrix r) {
-//		assert(l.getNumRow() == r.getNumRow());
-//		assert(l.getNumCol() == r.getNumCol());
-//		LGMatrix retval = new LGMatrix(l.getNumRow(),l.getNumCol());
-//		for(int i=0; i < l.getNumRow(); ++i) {
-//			for(int j=0; j < l.getNumCol(); ++j) {
-//				retval.setElement(i, j, l.getElement(i, j)*r.getElement(i, j));
-//			}
-//		}
-//		return retval;
-//	}
 	
-	private double getErr(LGMatrix l, LGMatrix r) {
+	/**
+	 * 两矩阵点乘，并返回结果矩阵
+	 * 
+	 * @param l
+	 * @param r
+	 * @return
+	 */
+	public FGMatrix DotMul(FGMatrix l, FGMatrix r) {
+		assert (l.getNumRow() == r.getNumRow());
+		assert (l.getNumCol() == r.getNumCol());
+		FGMatrix retval = new FGMatrix(l.getNumRow(), l.getNumCol());
+		for (int i = 0; i < l.getNumRow(); ++i) {
+			for (int j = 0; j < l.getNumCol(); ++j) {
+				retval.setElement(i, j, 1.0 * l.getElement(i, j)
+						* r.getElement(i, j));
+			}
+		}
+		return retval;
+	}
+
+	
+	private double getErr(FGMatrix l, FGMatrix r) {
 		double retval = 0.0;
 		for(int i=0; i < l.getNumRow(); ++i) {
 			for(int j=0; j < l.getNumCol(); ++j) {
@@ -209,8 +169,7 @@ public class LNMF {
 	}
 	
 	public void train() {
-		LGMatrix UV = new LGMatrix(M,N);
-		LGMatrix XX = new LGMatrix(M,N);
+		FGMatrix XX = new FGMatrix(M,N);
 		/* 初始化 U V 两个矩阵 */
 		this.RandomMatrix();
 		/* 归一化 V 矩阵的列 */
@@ -219,50 +178,67 @@ public class LNMF {
 		for(int it=0; it < this.iteratenum; it++) {
 			System.out.println("迭代："+it);
 			/* for U */
-			LGMatrix XV = new LGMatrix(M,K);
+			FGMatrix XV = new FGMatrix(M,K);
 			XV.mul(X,V);
-			LGMatrix UVV = new LGMatrix(M,K);
-			LGMatrix VV = new LGMatrix(K,K);
+			
+			
+			
+			FGMatrix UVV = new FGMatrix(M,K);
+			FGMatrix VV = new FGMatrix(K,K);
 			VV.mulTransposeLeft(V, V);
+			
+			
 			UVV.mul(U,VV);
-			LGMatrix tmp1 = this.DotDiv(XV, UVV);
+			
+			
+			
+			FGMatrix tmp1 = this.DotDiv(XV, UVV);
+			
+			
 			
 //			System.out.println("for U"+tmp1+"\n");
 			U = this.DotMul(U, tmp1);
 //			UV.mul(U, V);
 //			XX = this.DotDiv(X, UV);
-//			LGMatrix UU = new LGMatrix(M,K);
+//			FGMatrix UU = new FGMatrix(M,K);
 //			UU.mulTransposeRight(XX, V);
 //			U = this.DotMul(U, UU);
 			
 			/* for V */
-			LGMatrix XU = new LGMatrix(N,K);
+			FGMatrix XU = new FGMatrix(N,K);
 			XU.mulTransposeLeft(X, U);
-			LGMatrix VUU = new LGMatrix(N,K);
-			LGMatrix UU = new LGMatrix(K,K);
+			
+			
+			FGMatrix VUU = new FGMatrix(N,K);
+			FGMatrix UU = new FGMatrix(K,K);
 			UU.mulTransposeLeft(U, U);
+			
+			
+			
 			VUU.mul(V,UU);
-			LGMatrix tmp2 = this.DotDiv(XU, VUU);
+			
+			
+			
+			FGMatrix tmp2 = this.DotDiv(XU, VUU);
+			
+			
+			
 		    GVector v1 = new GVector(tmp2.getNumCol());
 		    tmp2.getColumn(0, v1);
-			System.out.println("for V"+v1+"\n");
 			V = this.DotMul(V, tmp2);
-//			UV.mul(U, V);
-//			XX = this.DotDiv(X, UV);
-//			LGMatrix VV = new LGMatrix(K,N);
-//			VV.mulTransposeLeft(U, XX);
-//			V = this.DotMul(V, VV);
 			
 			/* U 归一化 */
 			
 			XX.mulTransposeRight(U, V);
+			
+			
+			
 			this.normCol();
+			
+			
+			
 			System.out.println("错误率："+this.getErr(X, XX));
 		}
-		
-//		System.out.print(U);
-//		System.out.println();
-//		System.out.print(V);
 	}
 	
 	public void output(String f) throws IOException {
@@ -275,9 +251,9 @@ public class LNMF {
 	
 	public static void main(String[] args) throws IOException {
 		long startTime=System.currentTimeMillis();
-		LNMF test = new LNMF();
-//		test.load("D:/data/coPaper.txt");
-		test.load("C:/doc-word.txt");
+		FNMF test = new FNMF();
+		test.load("D:/data/coPaper.txt");
+//		test.load("C:/doc-word.txt");
 		test.train();
 		test.output("D:/data/UV.txt");
 		long endTime=System.currentTimeMillis();

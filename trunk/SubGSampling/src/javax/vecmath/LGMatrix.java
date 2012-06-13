@@ -9,6 +9,7 @@ public class LGMatrix {
 	 * Scaled for big data
 	 */
 	private static final long serialVersionUID = 8814686708709891913L;
+	private static final double EPS = 1.0E-8;
 
 	/**
 	 * Inner class data It's an element of matrix
@@ -72,9 +73,17 @@ public class LGMatrix {
 	public void setElement(int row, int column, double value) {
 		for (Data d : this.values) {
 			if (samePos(d, row, column)) {
-				d.val = value;
-				return;
+				if (value < EPS) {
+					this.values.remove(d);
+					return;
+				} else {
+					d.val = value;
+					return;
+				}
 			}
+		}
+		if (value < EPS) {
+			return;
 		}
 		Data d = new Data(row, column);
 		d.val = value;
@@ -190,55 +199,6 @@ public class LGMatrix {
 	}
 
 	/**
-	 * 两矩阵点乘，并返回结果矩阵
-	 * 
-	 * @param l
-	 * @param r
-	 * @return
-	 */
-	public LGMatrix DotMul(LGMatrix l, LGMatrix r) {
-		assert (l.getNumRow() == r.getNumRow());
-		assert (l.getNumCol() == r.getNumCol());
-		LGMatrix retval = new LGMatrix(l.getNumRow(), l.getNumCol());
-		for (int i = 0; i < l.getNumRow(); ++i) {
-			for (int j = 0; j < l.getNumCol(); ++j) {
-				retval
-						.setElement(i, j, l.getElement(i, j)
-								* r.getElement(i, j));
-			}
-		}
-		return retval;
-	}
-
-	/**
-	 * 两矩阵点除，并返回结果矩阵
-	 * 
-	 * @param l
-	 * @param r
-	 * @return
-	 */
-	public LGMatrix DotDiv(LGMatrix l, LGMatrix r) {
-		assert (l.getNumRow() == r.getNumRow());
-		assert (l.getNumCol() == r.getNumCol());
-		LGMatrix retval = new LGMatrix(l.getNumRow(), l.getNumCol());
-		for (int i = 0; i < l.getNumRow(); ++i) {
-			for (int j = 0; j < l.getNumCol(); ++j) {
-				if (r.getElement(i, j) == 0.0) {
-					r.setElement(i, j, 0.0000000001 / (r.getNumCol() * r
-							.getNumRow()));
-				}
-				if (l.getElement(i, j) == 0.0) {
-					r.setElement(i, j, 0.0000000001 / (l.getNumCol() * l
-							.getNumRow()));
-				}
-				retval.setElement(i, j, 1.0 * l.getElement(i, j)
-						/ r.getElement(i, j));
-			}
-		}
-		return retval;
-	}
-
-	/**
 	 * 返回列矩阵
 	 */
 	public final void getColumn(int col, GVector vector) {
@@ -273,7 +233,7 @@ public class LGMatrix {
 			}
 		}
 	}
-	
+
 	/**
 	 * toString
 	 */

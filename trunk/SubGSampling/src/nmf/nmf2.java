@@ -6,7 +6,9 @@ package nmf;
  * by yinxs
  */
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 
 import javax.vecmath.*;
@@ -204,9 +206,22 @@ public class nmf2 {
 //		System.out.print(V);
 	}
 	
-	public static void main(String args) throws IOException {
+	public void output(String f) throws IOException {
+		BufferedWriter writer = new BufferedWriter(new FileWriter(f));
+		writer.write(U.toString());
+		writer.write("\n");
+		writer.write(V.toString());
+		writer.close();
+	}
+	
+	public static void main(String[] args) throws IOException {
+		long startTime=System.currentTimeMillis();
 		nmf2 test = new nmf2();
-		test.load("D:/data/coPaper.txt");
+//		test.load("D:/data/coPaper.txt");
+		test.load("C:/doc-word.txt");
 		test.train();
+		test.output("D:/data/UV.txt");
+		long endTime=System.currentTimeMillis();
+		System.out.println("程序运行时间： "+(endTime-startTime)+"ms"); 
 	}
 }
