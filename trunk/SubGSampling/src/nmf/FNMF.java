@@ -260,3 +260,16 @@ public class FNMF {
 		System.out.println("程序运行时间： "+(endTime-startTime)+"ms"); 
 	}
 }
+
+/**
+ * 迭代：0
+XV: 39954
+VV: 4
+UVV: 57402
+tmp1: 39407
+XU: 39282
+UU: 4
+VUU: 57402
+tmp2: 39282
+V: 39280
+*/
