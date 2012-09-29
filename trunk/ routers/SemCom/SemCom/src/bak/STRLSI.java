@@ -92,7 +92,7 @@ public void test() throws IOException{
 		rlsi.readMatrix("c:/testDT.txt");
 		rlsi.train();
 		for(int k=0;k<rlsi.demesion;k++){
-			//rlsi.outputTopic(k);
+			rlsi.outputTopic(k);
 		}
 		
 		File outfile = new File("c:/testDT1.doc");
@@ -309,7 +309,7 @@ public void test() throws IOException{
 						sign = -1.0;
 					}
 					//double v = Math.abs(d) - this.lamda * this.alpha;
-					double v = Math.abs(t) - 0.001;
+					double v = Math.abs(t) - 0.003;
 					if (v < 0) {
 						v = 0.0;
 					}
