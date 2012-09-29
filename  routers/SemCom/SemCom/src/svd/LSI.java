@@ -80,7 +80,9 @@ public class LSI {
 
 	public void test() {
 		
-	
+		this.m=5;
+		this.n=5;
+		this.k=2;
 		mVectors = new Vector[m];
 		for (int i = 0; i < m; i++) {
 			mVectors[i] = new Vector(k);
@@ -89,19 +91,24 @@ public class LSI {
 		for (int i = 0; i < n; i++) {
 			nVectors[i] = new Vector(k);
 		}
+		int [][]data={
+		{1,2,3,1,5},  
+        {1,2,3,1,5},  
+        {5,1,3,1,2},  
+        {5,1,3,1,2},  
+        {5,1,3,1,2}};
 
 		List<MatElement> elemList = new ArrayList<MatElement>();
 
+		
 		for (int i = 0; i < this.m; i++) {
 			for (int j = 0; j < this.n; j++) {
 				MatElement e = new MatElement();
 				e.i = i;
 				e.j = j;
-				e.value = Math.random()* 10;
-				int a=(int) (Math.random()*10000);
-				if(a%200<2){
-					elemList.add(e);
-				}
+				e.value = data[i][j];
+				elemList.add(e);
+			
 				//elemList.add(e);
 			}
 		}
@@ -118,7 +125,7 @@ public class LSI {
 		}
 		for (MatElement e : elemList) {
 			double value1 = mVectors[e.i].multWith(nVectors[e.j]);
-			System.out.println(e.i + "," + e.j + "," + e.value + "," + value1);
+			System.out.println(e.i + "a\t" + e.j + "b\t" + e.value);
 		}
 		System.out.println("cnt:"+elemList.size()+"\n");
 		System.out.println("average error:"+err+"\n");
@@ -242,7 +249,7 @@ public class LSI {
 		Vector mVector = mVectors[e.i];
 		Vector nVector = nVectors[e.j];
 		double erro = e.value - mVector.multWith(nVector);
-		this.errorAmout += Math.abs(erro);
+		this.errorAmout += erro*erro;
 		Vector part1 = mVector.scale(this.lamda);
 		Vector part2 = nVector.scale(erro);
 		Vector direction = part1.sub(part2);
@@ -300,12 +307,13 @@ public class LSI {
 		nVertors1[0][1] = 2.0;
 		// System.out.println(nVertors1[0][1]);
 		LSI l = new LSI();
-//		l.test();
+		System.out.println("test");
+		l.test();
 		l.setWordFile("c:/data/term.txt");
 		l.initial(28569, 11771, 4);	
 		l.setInFile("c:/mdt.txt");
-		l.train();
-		l.outPutTopics();
+		//l.train();
+		//l.outPutTopics();
 //		int []a=new int[1];
 //		//a[1]=1;
 //		a[0]=1;
