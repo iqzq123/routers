@@ -1,56 +1,205 @@
 import java.io.*;
-
 import java.net.*;
+import java.util.BitSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import utility.IOUtil;
+import exception.Protocol;
+
+
+
+
 
 public class JobTracker {
+	final Logger logger = LoggerFactory.getLogger(JobTracker.class);
+	
+	// the number of current step
+	private int stepCount;
 
-	public static void main(String args[]) throws IOException{
-		
-		Socket socket=new Socket("127.0.0.1",4700);
-		//向本机的4700端口发出客户请求
-		
-		BufferedReader sin=new BufferedReader(new InputStreamReader(System.in));
-		//由系统标准输入设备构造BufferedReader对象
-		PrintWriter os=new PrintWriter(socket.getOutputStream());
-		//由Socket对象得到输出流，并构造PrintWriter对象
+	// How many workers finish step 'stepCount';
+	private int stepNum;
 
-		BufferedReader is=new BufferedReader(new InputStreamReader(socket.getInputStream()));
-
-		//由Socket对象得到输入流，并构造相应的BufferedReader对象
-
-		String readline;
-
-		readline=sin.readLine(); //从系统标准输入读入一字符串
-
-		while(!readline.equals("bye")){
-
-		//若从标准输入读入的字符串为 "bye"则停止循环
-
-		os.println(readline);
-
-		//将从系统标准输入读入的字符串输出到Server
-
-		os.flush();
-
-		//刷新输出流，使Server马上收到该字符串
-
-		System.out.println("Client:"+readline);
-		//在系统标准输出上打印读入的字符串
-
-		System.out.println("Server:"+is.readLine());
-
-		//从Server读入一字符串，并打印到标准输出上
-
-		readline=sin.readLine(); //从系统标准输入读入一字符串
-
-		} //继续循环
-
-		os.close(); //关闭Socket输出流
-
-		is.close(); //关闭Socket输入流
-
-		socket.close(); //关闭Socket
-
+	private int workerNum;
+	// indicate the active status of each worker
+	private BitSet workerStatus;
+	// connected worker number
+	private int conWorkerNum;
+	// how many threads that output result;
+	private int outputNum;
+	
+	private Configuration config;
+	
+	public synchronized void addStepNum() {
+		stepNum++;
 	}
+	public synchronized void setWorkerStatus(int workerId, boolean status) {
+		if (status)
+			workerStatus.set(workerId);
+		else
+			workerStatus.clear(workerId);
+	}
+	public synchronized void addOutputNum() {
+		outputNum++;
+	}
+	public int run() throws Exception {
+		System.out.println("jobTracker run..............");
+		try {
+		
 
+			// Tracking job
+			// 1: initialization	
+			stepCount = 0;
+			stepNum = 0;		
+			workerStatus = new BitSet(workerNum);
+			workerNum = config.getWorkerNum();
+			for (int i = 0; i < workerNum; i++)
+				workerStatus.set(i);
+
+			// 2: set up job runner for each worker
+			try {
+				ServerSocket listener = new ServerSocket(config.JOB_PORT);
+				conWorkerNum = 0;
+				for (; conWorkerNum < workerNum; conWorkerNum++) {
+					Socket socket = listener.accept();
+					JobRunner jober = new JobRunner(socket, conWorkerNum);
+					Thread t = new Thread(jober);
+					t.start();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+		
+			// 4: start working
+			logger.info("Start working");
+			logger.info(Protocol.SUPERSTEP + " 1 start");
+			stepNum = 0;
+			stepCount = 1;
+			
+			while (true) {
+				if (stepNum >= config.getWorkerNum()) {
+					logger.info(Protocol.SUPERSTEP + " " + stepCount + " done");
+					// System.out.println("!!!! " + stepNum + "\t" +
+					// workerStatus.toString());
+					// if (jobConf.isRecMode()
+					// && stepCount % config.getCheckInter() == 0) {
+					// logger.info("checkpoint created at step " + stepCount);
+					// latestCount = stepCount;
+					// }
+					if (!workerStatus.isEmpty()) {
+						// start next step
+						// System.out.println(workerStatus.toString());
+						stepNum = 0;
+						stepCount++;
+						logger.info(Protocol.SUPERSTEP + " " + stepCount
+								+ " start");
+					} else
+						break;
+
+				} else {
+					Thread.sleep(Protocol.THREAD_SHORT_SLEEP);
+				}
+			}
+
+			// 5: output result
+			logger.debug("Outputing results");
+			while (outputNum < workerNum)
+				Thread.sleep(Protocol.THREAD_SLEEP);
+
+			// 6: Finish the job
+	
+			// monitor.close();
+
+			logger.info("Job done!");
+			Thread.sleep(Protocol.THREAD_SLEEP);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+	
+	public class JobRunner implements Runnable {
+		private int pos;
+		private Socket server;
+		private String location;
+
+
+		public JobRunner(Socket server, int pos) {
+			this.server = server;
+			this.pos = pos;			
+			this.location = server.getInetAddress().toString().substring(1);
+				
+		}
+
+		/**
+		 * If a worker finished its work, it first send "superstep x" and send
+		 * worker status
+		 */
+		public void run() {
+			try {
+				BufferedReader bf = new BufferedReader(new InputStreamReader(
+						server.getInputStream()));
+				PrintWriter pw = new PrintWriter(server.getOutputStream(), true);
+
+				if (stepCount == 0) {		
+					addStepNum();
+				}
+
+				while (stepCount < 1)
+					Thread.sleep(Protocol.THREAD_SHORT_SLEEP);
+
+				// start step 1 (notify workers to work)
+				pw.println(Protocol.SUPERSTEP + Protocol.BLANK + stepCount);
+				boolean revFlag = false;
+				int currentStep = 1;
+				while (true) {
+					if (!revFlag) {
+						// this worker just finished a superstep
+						String request = bf.readLine();
+						if (request.startsWith(Protocol.WORKER_STATUS)) {
+							String[] tokens = request.split(Protocol.BLANK);
+							currentStep = Integer.parseInt(tokens[1]);
+							setWorkerStatus(pos,
+									Boolean.parseBoolean(tokens[2]));
+							addStepNum();
+							revFlag = true;
+						}
+						// Thread.sleep(Protocol.THREAD_SLEEP);
+					} else {
+						if (!workerStatus.isEmpty()) {
+							if (stepCount != currentStep) {
+								revFlag = false;
+								pw.println(Protocol.SUPERSTEP + Protocol.BLANK
+										+ stepCount);
+							} else
+								Thread.sleep(Protocol.THREAD_SHORT_SLEEP);
+						} else {
+							if (stepNum >= config.getWorkerNum()) {
+								pw.println(Protocol.JOB_DONE);
+								break;
+							} else
+								Thread.sleep(Protocol.THREAD_SHORT_SLEEP);
+						}
+					}
+				}
+
+				// wait for worker output finish
+				String request = bf.readLine();
+				if (request.equals(Protocol.DONE))
+					addOutputNum();
+
+				IOUtil.closeWriter(pw);
+				IOUtil.closeReader(bf);
+				IOUtil.closeSocket(server);
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	public static void main(String args[]) throws IOException {
+
+		
+	}
 }
