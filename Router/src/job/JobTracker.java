@@ -1,3 +1,4 @@
+package job;
 import java.io.*;
 import java.net.*;
 import java.util.BitSet;
@@ -70,7 +71,7 @@ public class JobTracker {
 			}
 
 		
-			// 4: start working
+			// 3: start working
 			logger.info("Start working");
 			logger.info(Protocol.SUPERSTEP + " 1 start");
 			stepNum = 0;
@@ -79,18 +80,13 @@ public class JobTracker {
 			while (true) {
 				if (stepNum >= config.getWorkerNum()) {
 					logger.info(Protocol.SUPERSTEP + " " + stepCount + " done");
-					// System.out.println("!!!! " + stepNum + "\t" +
-					// workerStatus.toString());
-					// if (jobConf.isRecMode()
-					// && stepCount % config.getCheckInter() == 0) {
-					// logger.info("checkpoint created at step " + stepCount);
-					// latestCount = stepCount;
-					// }
 					if (!workerStatus.isEmpty()) {
 						// start next step
 						// System.out.println(workerStatus.toString());
 						stepNum = 0;
 						stepCount++;
+						System.out.println(Protocol.SUPERSTEP + " " + stepCount
+								+ " start");
 						logger.info(Protocol.SUPERSTEP + " " + stepCount
 								+ " start");
 					} else
@@ -101,12 +97,12 @@ public class JobTracker {
 				}
 			}
 
-			// 5: output result
+			// 4: output result
 			logger.debug("Outputing results");
 			while (outputNum < workerNum)
 				Thread.sleep(Protocol.THREAD_SLEEP);
 
-			// 6: Finish the job
+			// 5: Finish the job
 	
 			// monitor.close();
 
@@ -128,6 +124,7 @@ public class JobTracker {
 			this.server = server;
 			this.pos = pos;			
 			this.location = server.getInetAddress().toString().substring(1);
+			logger.debug("start worker " + location);
 				
 		}
 
