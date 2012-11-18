@@ -4,6 +4,8 @@ import java.net.*;
 import java.util.BitSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+
 import utility.IOUtil;
 import exception.Protocol;
 
@@ -29,7 +31,12 @@ public class JobTracker {
 	private int outputNum;
 	
 	private Configuration config;
-	
+
+	private JobConf jobConf;
+	public JobTracker(Configuration config, JobConf jobConf) {
+		this.config = config;
+		this.jobConf = jobConf;
+	}
 	public synchronized void addStepNum() {
 		stepNum++;
 	}
@@ -45,14 +52,13 @@ public class JobTracker {
 	public int run() throws Exception {
 		System.out.println("jobTracker run..............");
 		try {
-		
-
 			// Tracking job
 			// 1: initialization	
 			stepCount = 0;
 			stepNum = 0;		
 			workerStatus = new BitSet(workerNum);
 			workerNum = config.getWorkerNum();
+			System.out.println("worker num:"+workerNum);
 			for (int i = 0; i < workerNum; i++)
 				workerStatus.set(i);
 
@@ -115,14 +121,14 @@ public class JobTracker {
 	}
 	
 	public class JobRunner implements Runnable {
-		private int pos;
+		private int id;
 		private Socket server;
 		private String location;
 
 
-		public JobRunner(Socket server, int pos) {
+		public JobRunner(Socket server, int id) {
 			this.server = server;
-			this.pos = pos;			
+			this.id = id;			
 			this.location = server.getInetAddress().toString().substring(1);
 			logger.debug("start worker " + location);
 				
@@ -152,11 +158,11 @@ public class JobTracker {
 				while (true) {
 					if (!revFlag) {
 						// this worker just finished a superstep
-						String request = bf.readLine();
+						String request = bf.readLine();					
 						if (request.startsWith(Protocol.WORKER_STATUS)) {
 							String[] tokens = request.split(Protocol.BLANK);
 							currentStep = Integer.parseInt(tokens[1]);
-							setWorkerStatus(pos,
+							setWorkerStatus(id,
 									Boolean.parseBoolean(tokens[2]));
 							addStepNum();
 							revFlag = true;
@@ -164,6 +170,13 @@ public class JobTracker {
 						// Thread.sleep(Protocol.THREAD_SLEEP);
 					} else {
 						if (!workerStatus.isEmpty()) {
+							if(stepCount>jobConf.getMaxStep()){
+								// kill all the workers
+								pw.println(Protocol.JOB_DONE);
+								setWorkerStatus(id,false);
+								addStepNum();
+								break;
+							}
 							if (stepCount != currentStep) {
 								revFlag = false;
 								pw.println(Protocol.SUPERSTEP + Protocol.BLANK
@@ -183,11 +196,13 @@ public class JobTracker {
 				// wait for worker output finish
 				String request = bf.readLine();
 				if (request.equals(Protocol.DONE))
+					System.out.println("add outputnum");
 					addOutputNum();
 
 				IOUtil.closeWriter(pw);
 				IOUtil.closeReader(bf);
 				IOUtil.closeSocket(server);
+				System.out.println("server done");
 			} catch (IOException e) {
 				e.printStackTrace();
 			} catch (InterruptedException e) {

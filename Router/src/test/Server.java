@@ -6,7 +6,7 @@ import java.net.*;
 
 
 
-public class JobTracker {
+public class Server {
 	public static void main(String args[]) throws IOException {
 
 		ServerSocket server = null;

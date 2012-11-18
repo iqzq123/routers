@@ -8,6 +8,7 @@ public class JobConf {
 	private String inputSrc = null;
 	private int splitNum = 0;
 	private String outputDir = null;
+	private int maxStep=Integer.MAX_VALUE;
 	public String getName() {
 		return name;
 	}
@@ -31,6 +32,12 @@ public class JobConf {
 	}
 	public void setOutputDir(String outputDir) {
 		this.outputDir = outputDir;
+	}
+	public int getMaxStep() {
+		return maxStep;
+	}
+	public void setMaxStep(int maxStep) {
+		this.maxStep = maxStep;
 	}
 
 	

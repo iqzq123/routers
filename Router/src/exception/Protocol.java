@@ -38,7 +38,7 @@ public interface Protocol {
 	public static final String WORKER_STATUS = "worker-status";
 	public static final String SUPERSTEP = "superstep";
 	public static final String JOB_DONE = "job done";
-	
+	public static final String JOB_STOP = "job stop";
 	public static final String SEED_NODE = "seed";
 
 	public static final int SOCKET_TIMEOUT = 200;

@@ -3,7 +3,7 @@ import java.io.*;
 
 import java.net.*;
 
-public class WorkTracker {
+public class Client {
 
 	public static void main(String args[]) throws IOException{
 		

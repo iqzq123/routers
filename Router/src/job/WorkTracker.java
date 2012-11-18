@@ -31,7 +31,7 @@ public class WorkTracker{
 	private int stepNum;
 
 	// thread status (whether the vertices of a split are all inactive)
-	private BitSet splitStatus;
+	private BitSet routerStatus;
 
 	// control the thread
 	private boolean working;
@@ -43,32 +43,36 @@ public class WorkTracker{
 		this.config = config;
 		this.jobConf = jobConf;
 		// output directory
-		outDir = new File(jobConf.getOutputDir());
-		if (!outDir.exists())
-			outDir.mkdir();
-		else
-			FileUtil.deleteDirectory(outDir, false);
+//		outDir = new File(jobConf.getOutputDir());
+//		if (!outDir.exists())
+//			outDir.mkdir();
+//		else
+//			FileUtil.deleteDirectory(outDir, false);
 	}
 
 	public synchronized void setSplitStatus(int workerId, boolean status) {
 		if (status)
-			splitStatus.set(workerId);
+			routerStatus.set(workerId);
 		else
-			splitStatus.clear(workerId);
+			routerStatus.clear(workerId);
 	}
 
 	public synchronized void addStepNum() {
 		stepNum++;
 	}
+
+
 	public int run() throws Exception {
 	
 		// 1: Initialize worker status
 		working = true;
 		stepCount = 0;
 		stepNum = 0;
-		
 		int routerNum=5;
-		// 2: Set up threads for every data split
+		routerStatus = new BitSet(routerNum);
+		for (int i = 0; i < routerNum; i++)
+			routerStatus.set(i);
+		// 2: Set up threads for every router
 		Set<RouterRunner> runners = new HashSet<RouterRunner>();
 		
 		int id = 0;
@@ -119,32 +123,32 @@ public class WorkTracker{
 				
 				logger.info("superstep " + stepCount + " done");
 		
-				if (!splitStatus.isEmpty())
+				if (!routerStatus.isEmpty())
 					pw.println(Protocol.WORKER_STATUS + Protocol.BLANK
 							+ stepCount + Protocol.BLANK + "true");
 				else
 					pw.println(Protocol.WORKER_STATUS + Protocol.BLANK
 							+ stepCount + Protocol.BLANK + "false");
 			} else if (line.startsWith(Protocol.JOB_DONE)) {
-				working = false;
+				working = false;	
 				break;
 			}
 		}
 
 		// 5: Output result
-		logger.debug("Outputing result to " + outDir);
+		//logger.debug("Outputing result to " + outDir);
 		
 		for(RouterRunner runner : runners)
 			runner.close();
 		
 		pw.println(Protocol.DONE);
-
 		IOUtil.closeWriter(pw);
 		IOUtil.closeReader(br);
 		IOUtil.closeSocket(socket);
 
 		// work done
 		logger.info("Job done!");
+		System.out.println("job done");
 
 
 	
@@ -166,7 +170,7 @@ public class WorkTracker{
 			while (working) {
 				if (stepCount != currentStep) {
 					currentStep = stepCount;	
-					System.out.println("router "+this.id+": runs ");
+					System.out.println("router "+this.id+": runs at "+currentStep);
 					addStepNum();
 				} else {
 					ThreadUtil.sleep(Protocol.THREAD_SLEEP);
